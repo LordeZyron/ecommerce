@@ -5,12 +5,15 @@ namespace Hcode;
 //Para utilizar o micro framework rain
 use Rain\Tpl;
 
-
 class Page {
 
 	private $tpl;
-	private $defaults = ["data"=>[]];
 	private $options = [];
+	private $defaults = [
+		"header"=>true,
+		"footer"=>true,
+		"data"=>[]
+];
 
 	public function __construct($opts = array(), $tpl_dir = "/views/"){
 
@@ -32,7 +35,7 @@ class Page {
 			$this->tpl->assign($key, $value);
 		}
 
-		$this->tpl->draw("header");
+		if ($this->options["header"] === true) $this->tpl->draw("header");
 
 	}
 
@@ -55,7 +58,7 @@ class Page {
 
 	public function __destruct(){
 
-		$this->tpl->draw("footer");
+		if ($this->options["footer"] === true) $this->tpl->draw("footer");
 
 	}
 
