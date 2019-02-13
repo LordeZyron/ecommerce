@@ -11,6 +11,7 @@ use \Slim\Slim;
 use \Hcode\Page;
 use \Hcode\PageAdmin;
 use \Hcode\Model\USer;
+use \Hcode\Model\Category;
 
 //Criando uma nova aplicação de Slim, uma nova rota, um caminho
 $app = new Slim();
@@ -245,13 +246,111 @@ $app->get("/admin/forgot/reset", function(){
 		"footer"=>false
 ]);
 
-	$page->setTpl("forgot-reset-success", array(
+	$page->setTpl("forgot-reset-success");
 
-		"name"=>$user["desperson"],
-		"code"=>$_GET["code"]
-	));
+});
 
-	});
+//Rota para entrar na página categorias
+$app->get("/admin/categories", function() {
+
+	User::verifyLogin();
+
+	$categories = Category::listAll();
+
+	$page = new PageAdmin();
+
+	$page->setTpl("categories", [
+
+	'categories'=>$categories
+
+	]);
+});
+
+// Rota para criar categoria
+$app->get("/admin/categories/create", function() {
+
+	User::verifyLogin();
+
+	$page = new PageAdmin();
+
+	$page->setTpl("categories-create");
+
+});
+
+
+//Função para criar nova categoria
+$app->post("/admin/categories/create", function() {
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->setData($_POST);
+
+	$category->save();
+
+	header('Location: /admin/categories');
+	exit;
+
+});
+
+//Rota para excluir categoria
+$app->get("/admin/categories/:idcategory/delete", function($idcategory){
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$category->delete();
+
+	header('Location: /admin/categories');
+	exit;
+
+
+});
+
+//Rota para editar categoria
+$app->get("/admin/categories/:idcategory", function($idcategory){
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$page = new PageAdmin();
+
+	$page->setTpl("categories-update", [
+
+		'category'=>$category->getValues()
+	]);
+
+
+});
+
+
+//Rota para 
+$app->post("/admin/categories/:idcategory", function($idcategory){
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$category->setData($_POST);
+
+	$category->save();
+
+	header('Location: /admin/categories');
+	exit;
+	
+
+
+
+});
 
 //Executa o site
 $app->run();
