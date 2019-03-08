@@ -41,6 +41,8 @@ class Product extends Model {
 		));
 		$this->setData($results[0]);
 	}
+
+
 	public function get($idproduct)
 	{
 		$sql = new Sql();
@@ -49,6 +51,8 @@ class Product extends Model {
 		]);
 		$this->setData($results[0]);
 	}
+
+
 	public function delete()
 	{
 		$sql = new Sql();
@@ -56,6 +60,8 @@ class Product extends Model {
 			':idproduct'=>$this->getidproduct()
 		]);
 	}
+
+
 	public function checkPhoto()
 	{
 		if (file_exists(
@@ -100,9 +106,9 @@ class Product extends Model {
 			"img" . DIRECTORY_SEPARATOR . 
 			"products" . DIRECTORY_SEPARATOR . 
 			$this->getidproduct() . ".jpg";
-		imagejpeg($image, $dist);
-		imagedestroy($image);
-		$this->checkPhoto();
+			imagejpeg($image, $dist);
+			imagedestroy($image);
+			$this->checkPhoto();
 	}
 	public function getFromURL($desurl)
 	{
@@ -112,15 +118,23 @@ class Product extends Model {
 		]);
 		$this->setData($rows[0]);
 	}
+
+
 	public function getCategories()
 	{
 		$sql = new Sql();
+
 		return $sql->select("
-			SELECT * FROM tb_categories a INNER JOIN tb_productscategories b ON a.idcategory = b.idcategory WHERE b.idproduct = :idproduct
+		
+			SELECT * FROM tb_categories a 
+			INNER JOIN tb_productscategories b ON a.idcategory = b.idcategory 
+			WHERE b.idproduct = :idproduct
 		", [
 			':idproduct'=>$this->getidproduct()
 		]);
 	}
+
+
 	public static function getPage($page = 1, $itemsPerPage = 10)
 	{
 		$start = ($page - 1) * $itemsPerPage;
@@ -138,6 +152,8 @@ class Product extends Model {
 			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
 		];
 	}
+
+
 	public static function getPageSearch($search, $page = 1, $itemsPerPage = 10)
 	{
 		$start = ($page - 1) * $itemsPerPage;
