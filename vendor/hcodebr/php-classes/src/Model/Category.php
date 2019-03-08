@@ -108,6 +108,34 @@ class Category extends Model {
 
 }
 
+	//Função para mostrar quantos items são mostrados por página
+	public function getProductsPage($page=1, $itemsPerPage=8){
+
+		//exemplo página 2: (2-1)*3= começa no registro 3, e traz 3 
+		$start = ($page-1)*$itemsPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("SELECT SQL_CALC_FOUND_ROWS * 
+			FROM tb_products a
+			INNER JOIN tb_productscategories b ON
+			a.idproduct=b.idproduct
+			INNER JOIN tb_categories c ON c.idcategory = b.idcategory
+			WHERE c.idcategory=:idcategory
+			LIMIT $start, $itemsPerPage;
+		", [
+			':idcategory'=>$this->getidcategory()
+		]);
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+		//ceil é uma função do PHP para arredondar um numero para inteiro, usado para exibir items e outra pagina
+		return [
+			'data'=>Product::checkList($results),
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
+
+	}
 	//Função para adicionar produtos em uma categoria
 	public function addProduct(Product $product) {
 
