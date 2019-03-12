@@ -2,9 +2,10 @@
 
 #Configuração de todas rotas do site
 
-use Hcode\Page;
-use Hcode\Model\Product;
-use Hcode\Model\Category;
+use \Hcode\Page;
+use \Hcode\Model\Product;
+use \Hcode\Model\Category;
+use \Hcode\Model\Cart;
 
 //Executa função juntando o header, body e footer dos arquivos html, por fim o destrutor
 $app->get('/', function() {
@@ -67,6 +68,17 @@ $app->get("/products/:desurl", function($desurl){
 		'categories'=>$product->getCategories()
 
 	]);
+
+});
+
+$app->get("/cart", function(){
+
+	$cart = Cart::getFromSession();
+
+	$page = new Page();
+
+	$page->setTpl("cart");
+
 
 });
 
