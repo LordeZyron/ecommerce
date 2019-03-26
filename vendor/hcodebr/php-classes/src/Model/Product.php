@@ -26,7 +26,7 @@ class Product extends Model {
 	}
 
 	
-	public function save()
+public function save()
 	{
 		$sql = new Sql();
 		$results = $sql->select("CALL sp_products_save(:idproduct, :desproduct, :vlprice, :vlwidth, :vlheight, :vllength, :vlweight, :desurl)", array(
@@ -61,7 +61,6 @@ class Product extends Model {
 		]);
 	}
 
-
 	public function checkPhoto()
 	{
 		if (file_exists(
@@ -78,12 +77,15 @@ class Product extends Model {
 		}
 		return $this->setdesphoto($url);
 	}
+
+
 	public function getValues()
 	{
 		$this->checkPhoto();
 		$values = parent::getValues();
 		return $values;
 	}
+
 	public function setPhoto($file)
 	{
 		$extension = explode('.', $file['name']);
@@ -106,10 +108,12 @@ class Product extends Model {
 			"img" . DIRECTORY_SEPARATOR . 
 			"products" . DIRECTORY_SEPARATOR . 
 			$this->getidproduct() . ".jpg";
-			imagejpeg($image, $dist);
-			imagedestroy($image);
-			$this->checkPhoto();
+		imagejpeg($image, $dist);
+		imagedestroy($image);
+		$this->checkPhoto();
 	}
+
+
 	public function getFromURL($desurl)
 	{
 		$sql = new Sql();
@@ -123,12 +127,8 @@ class Product extends Model {
 	public function getCategories()
 	{
 		$sql = new Sql();
-
 		return $sql->select("
-		
-			SELECT * FROM tb_categories a 
-			INNER JOIN tb_productscategories b ON a.idcategory = b.idcategory 
-			WHERE b.idproduct = :idproduct
+			SELECT * FROM tb_categories a INNER JOIN tb_productscategories b ON a.idcategory = b.idcategory WHERE b.idproduct = :idproduct
 		", [
 			':idproduct'=>$this->getidproduct()
 		]);

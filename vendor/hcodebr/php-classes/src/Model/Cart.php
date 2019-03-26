@@ -7,52 +7,31 @@ use \Hcode\Mailer;
 use \Hcode\Model\User;
 
 class Cart extends Model {
-
 	const SESSION = "Cart";
-
-	public static function getFromSession(){
-
+	const SESSION_ERROR = "CartError";
+	public static function getFromSession()
+	{
 		$cart = new Cart();
-
-		//Se a sessão existir e se o id for maior que zero, significa que o carrinho 
-		//já foi inserido no banco e já está em uma sessão
 		if (isset($_SESSION[Cart::SESSION]) && (int)$_SESSION[Cart::SESSION]['idcart'] > 0) {
-
 			$cart->get((int)$_SESSION[Cart::SESSION]['idcart']);
-	}
-
-	else {
-
-		$cart->getFromSessionID();
-		//Se não for maior que zero
-		if(!(int)$cart->getidcart() > 0){
-
-			$data = [
-				'dessessionid'=>session_id()
-			];
-
-			//Se ele não está em uma rota admin é false, ele está logado como cliente,
-			//no carrinho de compras
-			//Se ele está logado, o getFromSession funciona, e traz o usuário
-			if (User::checkLogin(false)) {
-
-				$user = User::getFromSession();
-				//Traz o id do usuário
-				$data['iduser'] = $user->getiduser();
+		} else {
+			$cart->getFromSessionID();
+			if (!(int)$cart->getidcart() > 0) {
+				$data = [
+					'dessessionid'=>session_id()
+				];
+				if (User::checkLogin(false)) {
+					$user = User::getFromSession();
+					
+					$data['iduser'] = $user->getiduser();	
+				}
+				$cart->setData($data);
+				$cart->save();
+				$cart->setToSession();
 			}
-
-			$cart->setData($data);
-
-			$cart->save();
-
-			$cart->setToSession();
-
 		}
+		return $cart;
 	}
-
-	return $cart;
-
-}
 
 	public function setToSession(){
 
@@ -62,46 +41,34 @@ class Cart extends Model {
 
 
 
-	public function getFromSessionID(){
-
+	public function getFromSessionID()
+	{
 		$sql = new Sql();
-
 		$results = $sql->select("SELECT * FROM tb_carts WHERE dessessionid = :dessessionid", [
-
 			':dessessionid'=>session_id()
-
 		]);
-
 		if (count($results) > 0) {
-
 			$this->setData($results[0]);
 		}
-	}
+	}	
 
 
 
-	public function get($idcart){
-
+	public function get(int $idcart)
+	{
 		$sql = new Sql();
-
 		$results = $sql->select("SELECT * FROM tb_carts WHERE idcart = :idcart", [
-
 			':idcart'=>$idcart
-
 		]);
-
 		if (count($results) > 0) {
-
 			$this->setData($results[0]);
-
 		}
 	}
 
 
-	public function save(){
-
+	public function save()
+	{
 		$sql = new Sql();
-
 		$results = $sql->select("CALL sp_carts_save(:idcart, :dessessionid, :iduser, :deszipcode, :vlfreight, :nrdays)", [
 			':idcart'=>$this->getidcart(),
 			':dessessionid'=>$this->getdessessionid(),
@@ -109,27 +76,65 @@ class Cart extends Model {
 			':deszipcode'=>$this->getdeszipcode(),
 			':vlfreight'=>$this->getvlfreight(),
 			':nrdays'=>$this->getnrdays()
-
-
 		]);
-
-			$this->setData($results[0]);
-
+		$this->setData($results[0]);
 	}
 
+	//Função para adicinoar produtos no carrinho
+	public function addProduct(Product $product)
+	{
+		$sql = new Sql();
+		$sql->query("INSERT INTO tb_cartsproducts (idcart, idproduct) VALUES(:idcart, :idproduct)", [
+			':idcart'=>$this->getidcart(),
+			':idproduct'=>$product->getidproduct()
+		]);
+		$this->getCalculateTotal();
+	}
 	
 
-	//Função para excluir produtos de uma categoria
-	public function removeProduct(Product $product) {
+	//Função para remover produtos do carrinho
+	public function removeProduct(Product $product, $all=false) {
 
 		$sql = new Sql();
 
-		$sql->query("DELETE FROM tb_productscategories WHERE idcategory= :idcategory AND idproduct = :idproduct", [
-			"idcategory"=>$this->getidcategory(),
+
+		if ($all){
+		//Remove todos produtos do carrinho
+		$sql->query("UPDATE tb_cartsproducts SET dtremoved = NOW() WHERE idcart = :idcart AND idproduct = :idproduct AND dtremoved IS NULL", [
+			"idcart"=>$this->getidcart(),
 			"idproduct"=>$product->getidproduct()
 
 		]);
 
+	}	else {
+			//Remove 1 produto do carrinho
+			$sql->query("UPDATE tb_cartsproducts SET dtremoved = NOW() WHERE idcart = :idcart AND idproduct = :idproduct AND dtremoved IS NULL LIMIT 1", [
+			"idcart"=>$this->getidcart(),
+			"idproduct"=>$product->getidproduct()
+
+		]);
+
+		}
+
+		$this->getCalculateTotal();
+
+	}
+
+
+public function getProducts()
+	{
+		$sql = new Sql();
+		$rows = $sql->select("
+			SELECT b.idproduct, b.desproduct , b.vlprice, b.vlwidth, b.vlheight, b.vllength, b.vlweight, b.desurl, COUNT(*) AS nrqtd, SUM(b.vlprice) AS vltotal 
+			FROM tb_cartsproducts a 
+			INNER JOIN tb_products b ON a.idproduct = b.idproduct 
+			WHERE a.idcart = :idcart AND a.dtremoved IS NULL 
+			GROUP BY b.idproduct, b.desproduct , b.vlprice, b.vlwidth, b.vlheight, b.vllength, b.vlweight, b.desurl 
+			ORDER BY b.desproduct
+		", [
+			':idcart'=>$this->getidcart()
+		]);
+		return Product::checkList($rows);
 	}
 
 }
